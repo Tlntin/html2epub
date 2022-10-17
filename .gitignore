@@ -1,0 +1,16 @@
+.idea/
+
+__pycache__
+
+./*.pyc
+
+temp/
+
+Images/
+
+dist/
+
+build/
+
+html2epub.egg-info
+
