@@ -19,7 +19,7 @@ pip install git+https://github.com/Tlntin/html2epub
 ```bash
 # use with cli
 html2epub \
-    --input_dir=xxxxx \
+    --input_dir=xxxxx \  # or --html_path or --url
     --output_dir=xxxxxxx \ 
     --title="xxxxx" \
     --description="xxxxx"

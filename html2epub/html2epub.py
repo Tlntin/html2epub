@@ -81,16 +81,16 @@ class Html2epub:
         toc_file.close()
         all_file = []
         if self.input_dir is not None:
-            all_file.extend(os.listdir(self.input_dir))
+            temp_list = os.listdir(self.input_dir)
+            temp_list = [
+                os.path.join(self.input_dir, temp) for temp in temp_list
+            ]
+            all_file.extend(temp_list)
         if self.html_path is not None:
             all_file.append(self.html_path)
-        if self.input_dir is None:
-            self.input_dir = "html"
-            if not os.path.exists(self.input_dir):
-                os.mkdir(self.input_dir)
         if self.url is not None:
             temp_file = f"{randint(1, 1000)}.html"
-            temp_path = os.path.join(self.input_dir, temp_file)
+            temp_path = os.path.join("temp", "Text", temp_file)
             i_headers = {
                             "User-Agent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; zh-CN; rv:1.9.1) Gecko/20090624 Firefox/3.5",
                             "Accept": "text/plain"
@@ -99,23 +99,22 @@ class Html2epub:
             if res.status_code == 200:
                 f = open(temp_path, "wb")
                 f.write(res.content)
-                all_file.append(temp_file)
+                all_file.append(temp_path)
 
 
         # all_file = sorted(all_file , key=cmp, reverse=True)
 
-        for _id, html_name in enumerate(all_file, start=1):
+        for _id, html_path in enumerate(all_file, start=1):
 
-            print("process ", html_name, f"{_id}/{len(all_file)}")
-            if not html_name.endswith('.html'):
+            print("process ", html_path, f"{_id}/{len(all_file)}")
+            if not html_path.endswith('.html'):
                 continue
-            file_path = os.path.join(self.input_dir, html_name)
-            title = html_name.replace('.html', '')
+            title = os.path.splitext(os.path.split(html_path)[-1])[0]
             toc = toc + navPoint_tmplate.format(id=_id, playOrder=_id, text=title, src=title) + '\n'
             item = item + item_template.format(title=title, id=_id) + '\n'
             item_ref = item_ref + item_ref_template.format(id=_id) + '\n'
 
-            html_file = open(file_path, 'r', encoding='utf-8')
+            html_file = open(html_path, 'r', encoding='utf-8')
             html_content = html_file.read()
             html_file.close()
 
