@@ -4,6 +4,10 @@ from html2epub.htmlcl import get_img
 import html2epub.zipFile as zipFile
 from argparse import ArgumentParser
 from typing import List, Optional
+import sys
+import pkg_resources
+import requests
+from random import randint
 
 
 def cmp(a):
@@ -11,19 +15,34 @@ def cmp(a):
 
 
 class Html2epub:
-    def __init__(self, Path, Topath, book_name, content):
-
-        self.path = self.Path2Std(Path)
-        self.toPath = self.Path2Std(Topath)
+    def __init__(self, url, html_path, input_dir, output_dir, book_name, content):
+        self.url = url
+        self.html_path = self.path2std(html_path)
+        self.input_dir = self.path2std(input_dir)
+        self.out_put_dir = self.path2std(output_dir)
+        self.now_dir = os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__))
+        )
+        self.resource_dir = os.path.join(self.now_dir, "resource")
+        if not os.path.exists(self.resource_dir):
+            temp_dir = pkg_resources.resource_filename(__name__, "")
+            self.resource_dir = os.path.join(
+                os.path.dirname(temp_dir),
+                "share/doc/html2epub/resource"
+            )
+        if not os.path.exists(self.resource_dir):
+            temp_dir = sys.prefix
+            self.resource_dir = os.path.join(
+                temp_dir,
+                "share/doc/html2epub/resource"
+            )
+        print("resource dir ", self.resource_dir)
         self.book_name = book_name
         self.content = content
 
     def start(self):
-        # if os.path.exists('temp'):
-        #     shutil.rmtree('temp')
-        # shutil.copytree('resource', 'temp')
         if not os.path.exists("temp"):
-            shutil.copytree('resource', 'temp')
+            shutil.copytree(self.resource_dir, 'temp')
         # just to save image
         if not os.path.exists("Images"):
             os.mkdir("Images")
@@ -60,8 +79,27 @@ class Html2epub:
         toc_file = open(r'temp/toc.ncx', 'r', encoding='utf-8')
         toc_content = toc_file.read()
         toc_file.close()
-
-        all_file = os.listdir(self.path)
+        all_file = []
+        if self.input_dir is not None:
+            all_file.extend(os.listdir(self.input_dir))
+        if self.html_path is not None:
+            all_file.append(self.html_path)
+        if self.input_dir is None:
+            self.input_dir = "html"
+            if not os.path.exists(self.input_dir):
+                os.mkdir(self.input_dir)
+        if self.url is not None:
+            temp_file = f"{randint(1, 1000)}.html"
+            temp_path = os.path.join(self.input_dir, temp_file)
+            i_headers = {
+                            "User-Agent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; zh-CN; rv:1.9.1) Gecko/20090624 Firefox/3.5",
+                            "Accept": "text/plain"
+                        }
+            res = requests.get(self.url, headers=i_headers, timeout=10)
+            if res.status_code == 200:
+                f = open(temp_path, "wb")
+                f.write(res.content)
+                all_file.append(temp_file)
 
 
         # all_file = sorted(all_file , key=cmp, reverse=True)
@@ -71,15 +109,13 @@ class Html2epub:
             print("process ", html_name, f"{_id}/{len(all_file)}")
             if not html_name.endswith('.html'):
                 continue
-            name = html_name
-            FilePath = self.path + name
-
-            title = name.replace('.html', '')
+            file_path = os.path.join(self.input_dir, html_name)
+            title = html_name.replace('.html', '')
             toc = toc + navPoint_tmplate.format(id=_id, playOrder=_id, text=title, src=title) + '\n'
             item = item + item_template.format(title=title, id=_id) + '\n'
             item_ref = item_ref + item_ref_template.format(id=_id) + '\n'
 
-            html_file = open(FilePath, 'r', encoding='utf-8')
+            html_file = open(file_path, 'r', encoding='utf-8')
             html_content = html_file.read()
             html_file.close()
 
@@ -100,27 +136,31 @@ class Html2epub:
         opf_file.write(opf_content.format(title=self.book_name, content1=self.content, content2=self.content, item=item,
                                           item_ref=item_ref))
         opf_file.close()
-
-        zipFile.zip_dir(r'temp', self.toPath + self.book_name + '.epub')
+        epub_path = os.path.join(self.out_put_dir, self.book_name + '.epub')
+        zipFile.zip_dir('temp', epub_path)
         shutil.rmtree('temp')
-        print('\nprocess finished')
+        print(f'\nprocess finished, output_path is {epub_path}')
 
-    def Path2Std(self, Path):
-
-        Path = Path.replace('\\', '/')
-
-        if Path.endswith('/'):
-            pass
-        else:
-            Path += '/'
-        return Path
+    @staticmethod
+    def path2std(input_path):
+        if isinstance(input_path, str):
+            input_path = input_path.replace('\\', '/')
+        return input_path
 
 
 def test(argv: Optional[List[str]] = None):
     parser = ArgumentParser(description='convert html to epub')
     parser.add_argument(
-        "--input_dir", type=str,
-        help="where you you html in ? give me a dir path"
+        "--url", type=str, default=None, required=False,
+       help="when you set the url, we can get it's html content, then convter it to epub!" 
+    )
+    parser.add_argument(
+        "--html_path", type=str, default=None, required=False,
+        help="where is you html ? give me a file path"
+    )
+    parser.add_argument(
+        "--input_dir", type=str, default=None, required=False,
+        help="where is you html ? give me a dir path"
     )
     parser.add_argument(
         "--output_dir", type=str,
@@ -135,9 +175,9 @@ def test(argv: Optional[List[str]] = None):
         help="description of book, it's optional!"
     )
     args = parser.parse_args(argv)
-    if args.input_dir is None:
+    if args.input_dir is None and args.url is None and args.html_path is None:
         print(
-            "you need to provide dir of html by --input_dir, ",
+            "you need to provide dir of html by --input_dir or provider url by --url or html path with --html_path ",
             "use --help to see more infomation!"
         )
         return 1
@@ -166,5 +206,5 @@ def test(argv: Optional[List[str]] = None):
         )
         return 1
     convter = Html2epub(
-        args.input_dir, args.output_dir, args.title, args.description)
+        args.url, args.html_path, args.input_dir, args.output_dir, args.title, args.description)
     convter.start()

@@ -23,6 +23,21 @@ setup(
                 'html2epub = html2epub.html2epub:test'
             ]
     },
+    # copy file to sys path
+    data_files = [
+        ("share/doc/html2epub/resource", [
+            "resource/content.opf",
+            "resource/mimetype",
+            "resource/page_styles.css",
+            "resource/stylesheet.css",
+            "resource/toc.ncx"
+            ]
+        ),
+        ("share/doc/html2epub/resource/META-INF", [
+            "resource/META-INF/container.xml"
+            ]
+        )
+    ]
     # exclude_package_date = {
     #     '': ['.gitignore'],
     #     '': ['dist'],

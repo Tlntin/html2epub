@@ -14,3 +14,7 @@ build/
 
 html2epub.egg-info
 
+html
+
+output
+

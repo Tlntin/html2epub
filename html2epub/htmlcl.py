@@ -29,7 +29,8 @@ class get_img(HTMLParser):
                         i_headers = {
                             "User-Agent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; zh-CN; rv:1.9.1) Gecko/20090624 Firefox/3.5",
                             "Accept": "text/plain"}
-
+                        if not value.startswith("http"):
+                            value = "https:" + value
                         res = requests.get(value, headers=i_headers, timeout=10)
                         if res.status_code == 200:
                             f = open(temp_image_path, "wb")

@@ -1,23 +1,16 @@
 from argparse import ArgumentParser
+import os
 from html2epub.html2epub import Html2epub
 
 
 if __name__ == '__main__':
-    parser = ArgumentParser(description='convert html to epub')
-    parser.add_argument(
-        "--input_dir", type=str,
-        help="where you save you html? give me a path"
-    )
-    parser.add_argument(
-        "--output_dir", type=str,
-        help="where you want to save?"
-
-    )
-    parser.add_argument(
-        "--title", type=str, help="the title of book",
-        default=None, required=False)
-    parser.add_argument("--description", type=str, default=None, required=False)
-    args = parser.parse_args()
-    convter = Html2epub(
-        args.input_dir, args.output_dir, args.title, args.description)
+    url = "https://www.baidu.com"
+    html_path = None
+    input_dir = None
+    output_dir = "output"
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+    title = "百度"
+    describe = ""
+    convter = Html2epub(url, html_path, input_dir, output_dir, title, describe)
     convter.start()
